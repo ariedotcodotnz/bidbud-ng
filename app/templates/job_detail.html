@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title or job.listing_id }} · BidBud-NG{% endblock %}
+{% block content %}
+<p><a href="/">← Dashboard</a></p>
+<h1>{{ job.title or job.listing_id }}</h1>
+<p><a href="{{ job.url }}" target="_blank" rel="noopener">View on TradeMe ↗</a></p>
+
+<div class="card">
+  <div class="grid">
+    <div><span class="k">Status</span>{{ job.status }}</div>
+    <div><span class="k">Strategy</span>{{ STRATEGY_LABELS.get(job.strategy, job.strategy) }}</div>
+    <div><span class="k">Your max</span>{{ job.max_bid | money }}</div>
+    <div><span class="k">Current</span>{{ job.current_price | money }}
+        {% if job.is_leader %}(leading){% endif %}</div>
+    <div><span class="k">Min next</span>{{ job.min_next_bid | money }}</div>
+    <div><span class="k">Bids</span>{{ job.bid_count }}</div>
+    <div><span class="k">Closes</span>{{ job.end_date | nztime }} ({{ job.end_date | timeleft }})</div>
+    <div><span class="k">Last action</span>{{ job.last_action or '—' }}</div>
+  </div>
+  <div class="opts">
+    Options: {% for k,v in options.items() %}<code>{{ k }}={{ v }}</code> {% endfor %}
+  </div>
+</div>
+
+<h2>Activity log</h2>
+<table class="logs">
+  <tbody>
+  {% for l in logs %}
+    <tr class="lvl-{{ l.level }}">
+      <td class="ts">{{ l.ts | nztime }}</td>
+      <td>{{ l.level }}</td>
+      <td>{{ l.message }}</td>
+    </tr>
+  {% endfor %}
+  {% if not logs %}<tr><td colspan="3" class="empty">No activity yet.</td></tr>{% endif %}
+  </tbody>
+</table>
+{% endblock %}

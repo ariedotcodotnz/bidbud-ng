@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Account · BidBud-NG{% endblock %}
+{% block content %}
+<h1>TradeMe account</h1>
+
+<div id="loginbox" hx-get="/login/status" hx-trigger="none">
+  {% if logged_in %}
+    <div class="banner ok">Logged in as member {{ member_id }}. Your session is
+      saved and reused; you only need to log in again if it expires.</div>
+  {% endif %}
+
+  {% if login.state == 'awaiting_2fa' %}
+    <div class="card">
+      <h2>Enter your 2FA code</h2>
+      <p>{{ login.message }}</p>
+      <form method="post" action="/login/2fa" class="stack">
+        <input name="code" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="6-digit code" required autofocus>
+        <button class="btn">Submit code</button>
+      </form>
+    </div>
+  {% elif login.state == 'starting' %}
+    <div class="banner warn" hx-get="/login" hx-trigger="every 2s"
+         hx-select="#loginbox" hx-target="#loginbox" hx-swap="outerHTML">
+      Logging in… {{ login.message }}
+    </div>
+  {% else %}
+    {% if login.state == 'error' %}
+      <div class="banner bad">{{ login.message }}</div>
+    {% endif %}
+    <div class="card">
+      <h2>{{ 'Re-authenticate' if logged_in else 'Log in' }}</h2>
+      <form method="post" action="/login" class="stack">
+        <label>Email
+          <input name="email" type="email" value="{{ email }}"
+                 {% if not email %}required{% endif %}>
+        </label>
+        <label>Password
+          <input name="password" type="password"
+                 placeholder="{{ '•••••• (saved)' if have_password else '' }}"
+                 {% if not have_password %}required{% endif %}>
+        </label>
+        <button class="btn">Log in</button>
+      </form>
+      <p class="hint">Credentials are stored encrypted on this server only and
+        used to drive the TradeMe login page. After login, a session cookie file
+        is saved so this is rarely needed.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

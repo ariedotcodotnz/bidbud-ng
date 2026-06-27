@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BidBud-NG{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+          integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">BidBud<span>-NG</span></a>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/add">Add listing</a>
+      <a href="/settings">Settings</a>
+      <a href="/login">Account</a>
+    </nav>
+    <div class="session"
+         hx-get="/login/status" hx-trigger="load, every 5s" hx-swap="innerHTML">
+    </div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <small>Self-hosted bidding assistant · use with your own authorised account.</small>
+  </footer>
+</body>
+</html>

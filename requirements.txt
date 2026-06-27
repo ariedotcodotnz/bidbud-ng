@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+jinja2>=3.1
+python-multipart>=0.0.9
+playwright>=1.44
+APScheduler>=3.10
+cryptography>=42.0
+pyotp>=2.9

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Watched auctions</h1>
+  <a class="btn" href="/add">+ Add listing</a>
+</div>
+
+{% if not logged_in %}
+<div class="banner warn">
+  You're not logged in to TradeMe — bids won't be placed until you
+  <a href="/login">log in</a>.
+</div>
+{% endif %}
+
+<div hx-get="/partials/jobs" hx-trigger="load, every 3s" hx-swap="innerHTML">
+  {% include "partials/jobs_table.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Add listing · BidBud-NG{% endblock %}
+{% block content %}
+<h1>Add a listing</h1>
+
+<form class="card stack" hx-post="/listings/preview" hx-target="#preview"
+      hx-swap="innerHTML">
+  <label>TradeMe listing URL or number
+    <input name="url" placeholder="https://www.trademe.co.nz/a/.../listing/6006426545"
+           required>
+  </label>
+  <button class="btn">Look up listing →</button>
+  <p class="hint">We read the listing's current price, closing time and minimum
+    next bid so you can set your maximum and strategy.</p>
+</form>
+
+<div id="preview"></div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% if error %}
+  <div class="banner bad">{{ error }}</div>
+{% elif preview %}
+<div class="card">
+  <h2>{{ preview.title }}</h2>
+  <div class="grid">
+    <div><span class="k">Current bid</span>{{ preview.current_price | money }}</div>
+    <div><span class="k">Min next bid</span>{{ preview.min_next_bid | money }}</div>
+    <div><span class="k">Bids</span>{{ preview.bid_count }}</div>
+    <div><span class="k">Reserve</span>{{ 'met' if preview.reserve_met else 'not met' }}</div>
+    <div><span class="k">Closes</span>{{ preview.end_date.isoformat() | nztime }}
+         ({{ preview.end_date.isoformat() | timeleft }})</div>
+    <div><span class="k">You lead?</span>{{ 'yes' if preview.is_leader else 'no' }}</div>
+  </div>
+
+  <form method="post" action="/listings" class="stack">
+    <input type="hidden" name="url" value="{{ url }}">
+    <input type="hidden" name="listing_id" value="{{ listing_id }}">
+    <input type="hidden" name="title" value="{{ preview.title }}">
+    <input type="hidden" name="end_date" value="{{ preview.end_date.isoformat() }}">
+    <input type="hidden" name="current_price" value="{{ preview.current_price }}">
+
+    <div class="row">
+      <label>Your maximum bid (NZD)
+        <input name="max_bid" type="number" step="0.01" min="0.01"
+               value="{{ suggested }}" required>
+      </label>
+      <label>Strategy
+        <select name="strategy">
+          {% for s in STRATEGIES %}
+          <option value="{{ s }}" {{ 'selected' if s == default_strategy else '' }}>
+            {{ STRATEGY_LABELS[s] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    {% if preview.shipping_options %}
+    <label>Shipping (added on top of your winning bid)
+      <select name="shipping_choice">
+        <optgroup label="This listing's options">
+          {% for so in preview.shipping_options %}
+          <option value="{{ so.shipping_id }}"
+            {{ 'selected' if (shipping_default not in ('cheapest','dearest','none')
+                              and shipping_default == so.shipping_id|string) else '' }}>
+            {{ so.method }} — {{ so.price | money }}</option>
+          {% endfor %}
+        </optgroup>
+        <optgroup label="Automatic">
+          <option value="cheapest" {{ 'selected' if shipping_default == 'cheapest' else '' }}>
+            Cheapest available</option>
+          <option value="dearest" {{ 'selected' if shipping_default == 'dearest' else '' }}>
+            Most expensive</option>
+        </optgroup>
+      </select>
+    </label>
+    {% else %}
+    <input type="hidden" name="shipping_choice" value="none">
+    <p class="hint">No shipping options on this listing (pick-up only) — nothing to select.</p>
+    {% endif %}
+
+    <button class="btn primary">Schedule bid</button>
+    <p class="hint">All strategies act within the final 2 minutes. Per-listing
+      options (cents, shipping, reminders) are taken from your
+      <a href="/settings">settings</a> at the moment you schedule.</p>
+  </form>
+</div>
+{% endif %}
