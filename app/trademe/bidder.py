@@ -60,7 +60,7 @@ async def _check_radio(modal, radio) -> bool:
 
 
 async def _select_shipping(modal, radios, n_ship, shipping_index, shipping_method):
-    # 1) Try to match the exact option by its visible method label.
+    # 1) Try to match the exact option by its visible label (method or "Pick-up").
     if shipping_method:
         want = shipping_method.strip().lower()
         for i in range(n_ship):
@@ -74,10 +74,13 @@ async def _select_shipping(modal, radios, n_ship, shipping_index, shipping_metho
                 txt = ""
             if want and want in txt:
                 if await _check_radio(modal, radios.nth(i)):
-                    return
-    # 2) Fall back to the resolved index.
+                    return True
+    # 2) Fall back to the resolved index – but only if we have one. For a
+    #    label-only choice (e.g. pick-up) we must NOT silently pick a paid option.
+    if shipping_index is None:
+        return False
     idx = max(0, min(shipping_index, n_ship - 1))
-    await _check_radio(modal, radios.nth(idx))
+    return await _check_radio(modal, radios.nth(idx))
 
 
 async def place_bid(
@@ -119,13 +122,48 @@ async def place_bid(
         await amount_input.fill("")
         await amount_input.fill(f"{amount:.2f}")
 
-        # 2) shipping (required when present). Prefer matching the exact option
-        # the user picked by its label text (method name); fall back to index.
-        radios = modal.locator("input[name^='selectedShippingId-']")
-        n_ship = await radios.count()
-        if n_ship and shipping_index is not None:
-            await _select_shipping(modal, radios, n_ship,
-                                   shipping_index, shipping_method)
+        # 2) shipping / pick-up (required when present). Prefer matching the
+        # exact option the user picked by its label; fall back to index for
+        # numbered shipping options.
+        if shipping_index is None and shipping_method:
+            # Label-only choice (e.g. pick-up): search the whole chooser, which
+            # includes the pick-up radio that isn't in shippingOptions.
+            group = modal.locator(
+                "tm-choose-shipping input[type='radio'], "
+                "input[name^='selectedShippingId-']"
+            )
+            gcount = await group.count()
+            ok = (
+                await _select_shipping(modal, group, gcount, None, shipping_method)
+                if gcount else False
+            )
+            if not ok:
+                await _shot(page, "delivery-option-missing")
+                return BidResult(
+                    False,
+                    f"Delivery option '{shipping_method}' was not found in the bid form.",
+                    amount=amount,
+                    autobid=autobid,
+                    submitted=False,
+                )
+        else:
+            radios = modal.locator("input[name^='selectedShippingId-']")
+            n_ship = await radios.count()
+            if shipping_index is not None:
+                ok = (
+                    await _select_shipping(modal, radios, n_ship,
+                                           shipping_index, shipping_method)
+                    if n_ship else False
+                )
+                if not ok:
+                    await _shot(page, "delivery-option-missing")
+                    return BidResult(
+                        False,
+                        "Selected shipping option was not found in the bid form.",
+                        amount=amount,
+                        autobid=autobid,
+                        submitted=False,
+                    )
 
         # 3) autobid switch
         autobid_input = modal.locator("input[name='autobid']")

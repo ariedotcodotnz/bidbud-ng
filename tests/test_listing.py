@@ -97,3 +97,14 @@ class TestParseState:
 
     def test_returns_none_without_state(self):
         assert L.parse_state("<html>no state</html>", "1") is None
+
+    @pytest.mark.parametrize("value,expected", [
+        (0, False),   # None
+        (1, True),    # Allow
+        (2, True),    # Demand (pickup only)
+        (3, False),   # Forbid  <- the real listing had this
+        (None, False),
+    ])
+    def test_allows_pickups_enum(self, value, expected):
+        html = frend_html(extra_item={"allowsPickups": value})
+        assert L.parse_state(html, "6006426545").allows_pickups is expected

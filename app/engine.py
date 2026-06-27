@@ -16,7 +16,7 @@ from playwright.async_api import Page
 
 from . import db
 from .money import D, add_cents, fmt, one_increment
-from .models import ListingState
+from .models import BidResult, ListingState
 from .strategies import StrategyConfig, StrategyMemory, decide
 from .trademe import bidder
 from .trademe import listing as listing_mod
@@ -42,6 +42,12 @@ def _resolve_shipping(state: ListingState, choice: str):
     picked, or one of the keywords ``cheapest`` / ``dearest`` / ``none``.
     Returns ``(index, method)`` to drive the bid modal, or ``(None, None)``.
     """
+    if choice == "pickup" and state and state.allows_pickups:
+        # Pick-up isn't in shippingOptions; the bidder selects it in the modal
+        # by matching the radio whose label reads "Pick-up".
+        return None, "Pick-up"
+    if choice == "pickup":
+        raise ValueError("pick-up is no longer available on this listing")
     opts = state.shipping_options if state else []
     if not opts or choice == "none":
         return None, None
@@ -204,13 +210,31 @@ async def _execute(
     dont_add_cents, email_if_outbid, max_bid, reason,
 ):
     amount = D(amount)
+
+    def failed(message: str) -> BidResult:
+        result = BidResult(
+            False, message, amount=amount, autobid=autobid, submitted=False
+        )
+        db.update_job(job_id, last_action=result.message)
+        db.log(job_id, "warn", result.message)
+        return result
+
     if not autobid and not is_max:
         amount = add_cents(amount, max_bid, dont_add_cents)
     ship_state = listing_mod.parse_state(
         await browser.fetch_html(url) or "", listing_id
     )
-    ship_idx, ship_method = _resolve_shipping(ship_state, choice) \
-        if ship_state else (None, None)
+    if ship_state is None:
+        if choice == "pickup":
+            return failed(
+                "Pick-up was selected, but listing delivery options could not be refreshed.",
+            )
+        ship_idx, ship_method = None, None
+    else:
+        try:
+            ship_idx, ship_method = _resolve_shipping(ship_state, choice)
+        except ValueError as exc:
+            return failed(str(exc))
 
     db.log(job_id, "info", f"Placing {fmt(amount)} "
                            f"({'autobid' if autobid else 'normal'}) – {reason}")

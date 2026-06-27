@@ -75,6 +75,18 @@ class TestPreview:
         assert r.status_code == 200
         assert "Couldn" in r.text and "read that listing" in r.text
 
+    def test_offers_pickup_when_allowed(self, api):
+        client, fakes = api
+        fakes.html = frend_html(extra_item={"allowsPickups": 1})  # Allow
+        r = client.post("/listings/preview", data={"url": "6006426545"})
+        assert 'value="pickup"' in r.text and "Pick-up" in r.text
+
+    def test_no_pickup_when_forbidden(self, api):
+        client, fakes = api
+        fakes.html = frend_html(extra_item={"allowsPickups": 3})  # Forbid
+        r = client.post("/listings/preview", data={"url": "6006426545"})
+        assert 'value="pickup"' not in r.text
+
 
 class TestJobLifecycle:
     def test_create_view_cancel_delete(self, api):

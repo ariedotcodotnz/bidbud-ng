@@ -14,7 +14,7 @@ from app.models import BidResult
 from app.money import D
 from app.trademe import bidder
 from app.trademe import browser as browser_mod
-from .factories import ListingSim, DummyPage, make_state
+from .factories import ListingSim, DummyPage, frend_html, make_state
 
 
 # --------------------------------------------------------------------------- #
@@ -47,6 +47,18 @@ class TestResolveShipping:
 
     def test_no_shipping_options(self):
         assert engine._resolve_shipping(make_state(shipping=[]), "cheapest") == (None, None)
+
+    def test_pickup(self):
+        # Pick-up resolves to a label-only selection (no index).
+        state = make_state(allows_pickups=True)
+        assert engine._resolve_shipping(state, "pickup") == (None, "Pick-up")
+        # Works even with no shipping options (pickup-only listing).
+        pickup_only = make_state(shipping=[], allows_pickups=True)
+        assert engine._resolve_shipping(pickup_only, "pickup") == (None, "Pick-up")
+
+    def test_pickup_unavailable(self):
+        with pytest.raises(ValueError, match="pick-up is no longer available"):
+            engine._resolve_shipping(make_state(allows_pickups=False), "pickup")
 
 
 # --------------------------------------------------------------------------- #
@@ -183,3 +195,30 @@ async def test_normal_bid_gets_cents_nudged(temp_db, monkeypatch):
     amt = calls[0]["amount"]
     assert calls[0]["autobid"] is False
     assert D(10) < amt < D(11)                   # $10.xx, nudged but under max
+
+
+async def test_pickup_unavailable_skips_before_bidding(temp_db, monkeypatch):
+    async def fetch(url, *a, **k):
+        return frend_html(extra_item={"allowsPickups": 3})  # forbidden
+
+    called = {"place": False}
+
+    async def fake_place(*a, **k):
+        called["place"] = True
+        return BidResult(True, "should not happen", submitted=True)
+
+    bm = browser_mod.browser
+    monkeypatch.setattr(bm, "fetch_html", fetch)
+    monkeypatch.setattr(bidder, "place_bid", fake_place)
+
+    jid = _mkjob("fast", "50", shipping_choice="pickup")
+    result = await engine._execute(
+        jid, DummyPage(), "https://x/listing/6006426545", "6006426545", D(50),
+        autobid=True, is_max=True, choice="pickup", dont_add_cents=True,
+        email_if_outbid=True, max_bid=D(50), reason="test",
+    )
+
+    assert result.ok is False
+    assert result.submitted is False
+    assert called["place"] is False
+    assert "pick-up is no longer available" in db.get_job(jid)["last_action"]

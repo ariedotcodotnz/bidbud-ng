@@ -89,6 +89,7 @@ def make_state(
     my_id: int = 1,
     shipping=DEFAULT_SHIPPING,
     reserve_met: bool = True,
+    allows_pickups: bool = False,
 ) -> ListingState:
     end = datetime.now(timezone.utc) + timedelta(seconds=seconds_left)
     opts = [ShippingOption(str(s), m, D(p)) for s, m, p in (shipping or [])]
@@ -98,6 +99,7 @@ def make_state(
         bid_count=bid_count, reserve_met=reserve_met, reserve_state=1,
         leading_bidder_id=(my_id if leader_is_me else 999),
         my_member_id=my_id, shipping_options=opts,
+        allows_pickups=allows_pickups,
     )
 
 

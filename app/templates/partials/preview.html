@@ -35,28 +35,34 @@
       </label>
     </div>
 
-    {% if preview.shipping_options %}
-    <label>Shipping (added on top of your winning bid)
+    {% if preview.shipping_options or preview.allows_pickups %}
+    <label>Delivery (added on top of your winning bid)
       <select name="shipping_choice">
         <optgroup label="This listing's options">
+          {% if preview.allows_pickups %}
+          <option value="pickup" {{ 'selected' if not preview.shipping_options else '' }}>
+            Pick-up (free)</option>
+          {% endif %}
           {% for so in preview.shipping_options %}
           <option value="{{ so.shipping_id }}"
-            {{ 'selected' if (shipping_default not in ('cheapest','dearest','none')
+            {{ 'selected' if (shipping_default not in ('cheapest','dearest','none','pickup')
                               and shipping_default == so.shipping_id|string) else '' }}>
             {{ so.method }} — {{ so.price | money }}</option>
           {% endfor %}
         </optgroup>
-        <optgroup label="Automatic">
+        {% if preview.shipping_options %}
+        <optgroup label="Automatic (shipping)">
           <option value="cheapest" {{ 'selected' if shipping_default == 'cheapest' else '' }}>
             Cheapest available</option>
           <option value="dearest" {{ 'selected' if shipping_default == 'dearest' else '' }}>
             Most expensive</option>
         </optgroup>
+        {% endif %}
       </select>
     </label>
     {% else %}
     <input type="hidden" name="shipping_choice" value="none">
-    <p class="hint">No shipping options on this listing (pick-up only) — nothing to select.</p>
+    <p class="hint">No delivery options to choose for this listing.</p>
     {% endif %}
 
     <button class="btn primary">Schedule bid</button>

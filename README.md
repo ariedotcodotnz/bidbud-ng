@@ -121,7 +121,7 @@ app/
     listing.py         # parse listing state from embedded #frend-state JSON
     bidder.py          # drive the bid modal (amount, shipping, autobid, submit)
   templates/  static/  # HTMX dashboard
-tests/                 # pytest suite (124 tests)
+tests/                 # pytest suite (139 tests)
 ```
 
 ### Tests
@@ -136,7 +136,7 @@ network.
 
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest            # 124 passed
+.venv/bin/python -m pytest            # 139 passed
 .venv/bin/python -m pytest -v         # verbose
 .venv/bin/python -m pytest tests/test_strategies.py   # one module
 ```

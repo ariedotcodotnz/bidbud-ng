@@ -128,7 +128,8 @@ def parse_state(html: str, listing_id: str | None = None) -> ListingState | None
         leading_bidder_id=leading_bidder_id,
         my_member_id=my_member_id,
         shipping_options=shipping,
-        allows_pickups=item.get("allowsPickups") not in (None, 1),
+        # TradeMe AllowsPickups enum: 0/None=None, 1=Allow, 2=Demand, 3=Forbid.
+        allows_pickups=item.get("allowsPickups") in (1, 2),
         has_ping=bool(item.get("hasPing")),
         raw=item,
     )

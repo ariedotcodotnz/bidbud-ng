@@ -56,7 +56,7 @@ class FakeModal:
         raise KeyError(sel)
 
 
-def _ship_setup(raise_ids=()):
+def _ship_setup(raise_ids=(), with_pickup=False):
     radios = [FakeRadio("4", "4" in raise_ids),
               FakeRadio("5", "5" in raise_ids),
               FakeRadio("6", "6" in raise_ids)]
@@ -65,6 +65,9 @@ def _ship_setup(raise_ids=()):
         "5": FakeLabel("North Island, Standard — $17.00"),
         "6": FakeLabel("South Island, Economy — $22.00"),
     }
+    if with_pickup:
+        radios.insert(0, FakeRadio("p"))
+        labels["p"] = FakeLabel("Pick-up")
     return FakeModal(labels), FakeRadios(radios), radios, labels
 
 
@@ -90,6 +93,21 @@ class TestSelectShipping:
         ok = await bidder._check_radio(modal, rlist[0])
         assert ok is True
         assert labels["4"].clicked is True
+
+    async def test_label_only_pickup_selection(self):
+        # index=None (pick-up): must match the "Pick-up" radio by label only.
+        modal, radios, rlist, _ = _ship_setup(with_pickup=True)
+        ok = await bidder._select_shipping(modal, radios, len(rlist), None, "Pick-up")
+        assert ok is True
+        assert rlist[0].checked is True            # the pick-up radio
+        assert all(not r.checked for r in rlist[1:])
+
+    async def test_label_only_does_not_fall_back_to_index(self):
+        # index=None and no label match -> select nothing (never a paid option).
+        modal, radios, rlist, _ = _ship_setup()
+        ok = await bidder._select_shipping(modal, radios, len(rlist), None, "Pick-up")
+        assert ok is False
+        assert all(not r.checked for r in rlist)
 
 
 # --------------------------------------------------------------------------- #
