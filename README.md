@@ -121,13 +121,24 @@ app/
     listing.py         # parse listing state from embedded #frend-state JSON
     bidder.py          # drive the bid modal (amount, shipping, autobid, submit)
   templates/  static/  # HTMX dashboard
-tests/test_core.py     # pure-logic tests (money, parser, all strategies)
+tests/                 # pytest suite (124 tests)
 ```
 
-Run the logic tests:
+### Tests
+
+A comprehensive `pytest` suite covers money/increment math, the listing-state
+parser, the data models, all four strategies, settings/DB persistence,
+security (password encryption), the bidder's shipping-selection / verification /
+error-detection helpers, the login state machine, and the FastAPI endpoints.
+The **engine tests simulate whole auctions** end-to-end with the browser and
+bidder mocked, so they run in well under a second and need no Chromium or
+network.
 
 ```bash
-.venv/bin/python -m tests.test_core
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest            # 124 passed
+.venv/bin/python -m pytest -v         # verbose
+.venv/bin/python -m pytest tests/test_strategies.py   # one module
 ```
 
 ---

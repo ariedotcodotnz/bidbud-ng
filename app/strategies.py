@@ -128,19 +128,17 @@ def decide_blocking(state, mem, cfg) -> BidDecision:
 def decide_adaptive(state, mem, cfg) -> BidDecision:
     if state.seconds_left() > cfg.activate_seconds:
         return WAIT("adaptive: not yet in the final 2 minutes")
+
+    # Resolve a pending detection probe from the previous loop. Do this even if
+    # the probe took the lead, so we record "no autobid" and don't re-probe.
+    if mem.awaiting_probe_result:
+        mem.awaiting_probe_result = False
+        mem.autobid_detected = not state.is_leader  # instantly outbid => autobid
+
     if state.is_leader:
         return WAIT("adaptive: leading")
     if not _can_afford(state, cfg):
         return WAIT("adaptive: min next bid exceeds your maximum")
-
-    # Resolve a pending detection probe from the previous loop.
-    if mem.awaiting_probe_result:
-        mem.awaiting_probe_result = False
-        mem.autobid_detected = not state.is_leader  # outbid instantly => autobid
-        reason = ("adaptive: detected a competing autobid"
-                  if mem.autobid_detected else
-                  "adaptive: no competing autobid – manual opponents")
-        # fall through to act on the detection result below
 
     # Detection not yet attempted: send a probe minimum bid.
     if mem.autobid_detected is None:
