@@ -1,68 +1,102 @@
 {% extends "base.html" %}
 {% block title %}Settings · BidBud-NG{% endblock %}
 {% block content %}
-<h1>Settings</h1>
-<form method="post" action="/settings" class="card stack">
+<h1 class="text-2xl font-bold mb-4">Settings</h1>
+<form method="post" action="/settings" class="card bg-base-100 shadow">
+  <div class="card-body flex flex-col gap-4">
 
-  <h2>Bidding defaults</h2>
-  <div class="row">
-    <label>Default strategy
-      <select name="default_strategy">
-        {% for st in STRATEGIES %}
-        <option value="{{ st }}" {{ 'selected' if st == s['default_strategy'] else '' }}>
-          {{ STRATEGY_LABELS[st] }}</option>
-        {% endfor %}
-      </select>
+    <h2 class="text-lg font-semibold">Bidding defaults</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Default strategy</span></div>
+        <select name="default_strategy" class="select select-bordered w-full">
+          {% for st in STRATEGIES %}
+          <option value="{{ st }}" {{ 'selected' if st == s['default_strategy'] else '' }}>
+            {{ STRATEGY_LABELS[st] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Shipping choice when bidding</span></div>
+        <select name="shipping_preference" class="select select-bordered w-full">
+          {% for v,l in [('cheapest','Cheapest option'),('dearest','Most expensive'),('none','Don\'t select (pickup only)')] %}
+          <option value="{{ v }}" {{ 'selected' if v == s['shipping_preference'] else '' }}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <label class="label cursor-pointer justify-start gap-3 items-start">
+      <input type="checkbox" name="enter_default_bid" class="checkbox mt-0.5"
+        {{ 'checked' if s['enter_default_bid'] == '1' else '' }}>
+      <span class="label-text"><b>Enter default bid</b> — prefill the max field at two increments above the current bid.</span>
     </label>
-    <label>Shipping choice when bidding
-      <select name="shipping_preference">
-        {% for v,l in [('cheapest','Cheapest option'),('dearest','Most expensive'),('none','Don\'t select (pickup only)')] %}
-        <option value="{{ v }}" {{ 'selected' if v == s['shipping_preference'] else '' }}>{{ l }}</option>
-        {% endfor %}
-      </select>
+
+    <label class="label cursor-pointer justify-start gap-3 items-start">
+      <input type="checkbox" name="bid_early_single_bid" class="checkbox mt-0.5"
+        {{ 'checked' if s['bid_early_single_bid'] == '1' else '' }}>
+      <span class="label-text"><b>Bid early if single bid left</b> — lodge your max as soon as the price is one bid away from it.</span>
     </label>
-  </div>
 
-  <label class="check"><input type="checkbox" name="enter_default_bid"
-    {{ 'checked' if s['enter_default_bid'] == '1' else '' }}>
-    <span><b>Enter default bid</b> — prefill the max field at two increments above the current bid.</span></label>
-
-  <label class="check"><input type="checkbox" name="bid_early_single_bid"
-    {{ 'checked' if s['bid_early_single_bid'] == '1' else '' }}>
-    <span><b>Bid early if single bid left</b> — lodge your max as soon as the price is one bid away from it.</span></label>
-
-  <label class="check"><input type="checkbox" name="dont_add_cents"
-    {{ 'checked' if s['dont_add_cents'] == '1' else '' }}>
-    <span><b>Don't add cents</b> — keep bids on round dollars instead of nudging by a few cents.</span></label>
-
-  <label class="check"><input type="checkbox" name="email_if_outbid"
-    {{ 'checked' if s['email_if_outbid'] == '1' else '' }}>
-    <span><b>Email me if I'm outbid</b> — tick the reminder box in the bid form.</span></label>
-
-  <h2>Timing (advanced)</h2>
-  <div class="row">
-    <label>Slow/Adaptive snipe window (s)
-      <input name="snipe_seconds" type="number" min="2" max="60" value="{{ s['snipe_seconds'] }}"></label>
-    <label>Fast lead time (s before close)
-      <input name="fast_lead_seconds" type="number" min="10" max="120" value="{{ s['fast_lead_seconds'] }}"></label>
-  </div>
-  <div class="row">
-    <label>Poll: far (s)<input name="poll_far_seconds" type="number" min="1" value="{{ s['poll_far_seconds'] }}"></label>
-    <label>Poll: near (s)<input name="poll_near_seconds" type="number" min="1" value="{{ s['poll_near_seconds'] }}"></label>
-    <label>Poll: final (s)<input name="poll_final_seconds" type="number" min="1" value="{{ s['poll_final_seconds'] }}"></label>
-  </div>
-
-  <h2>TradeMe credentials</h2>
-  <div class="row">
-    <label>Email<input name="trademe_email" type="email" value="{{ s['trademe_email'] }}"></label>
-    <label>Password
-      <input name="trademe_password" type="password"
-             placeholder="{{ '•••••• (saved)' if have_password else 'set password' }}">
+    <label class="label cursor-pointer justify-start gap-3 items-start">
+      <input type="checkbox" name="dont_add_cents" class="checkbox mt-0.5"
+        {{ 'checked' if s['dont_add_cents'] == '1' else '' }}>
+      <span class="label-text"><b>Don't add cents</b> — keep bids on round dollars instead of nudging by a few cents.</span>
     </label>
-  </div>
-  <p class="hint">Stored encrypted on this server. Used only to drive the TradeMe
-    login page; you'll still enter your 2FA code on the <a href="/login">Account</a> page.</p>
 
-  <button class="btn primary">Save settings</button>
+    <label class="label cursor-pointer justify-start gap-3 items-start">
+      <input type="checkbox" name="email_if_outbid" class="checkbox mt-0.5"
+        {{ 'checked' if s['email_if_outbid'] == '1' else '' }}>
+      <span class="label-text"><b>Email me if I'm outbid</b> — tick the reminder box in the bid form.</span>
+    </label>
+
+    <div class="divider my-0"></div>
+    <h2 class="text-lg font-semibold">Timing (advanced)</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Slow/Adaptive snipe window (s)</span></div>
+        <input name="snipe_seconds" type="number" min="2" max="60" value="{{ s['snipe_seconds'] }}"
+               class="input input-bordered w-full"></label>
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Fast lead time (s before close)</span></div>
+        <input name="fast_lead_seconds" type="number" min="10" max="120" value="{{ s['fast_lead_seconds'] }}"
+               class="input input-bordered w-full"></label>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Poll: far (s)</span></div>
+        <input name="poll_far_seconds" type="number" min="1" value="{{ s['poll_far_seconds'] }}"
+               class="input input-bordered w-full"></label>
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Poll: near (s)</span></div>
+        <input name="poll_near_seconds" type="number" min="1" value="{{ s['poll_near_seconds'] }}"
+               class="input input-bordered w-full"></label>
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Poll: final (s)</span></div>
+        <input name="poll_final_seconds" type="number" min="1" value="{{ s['poll_final_seconds'] }}"
+               class="input input-bordered w-full"></label>
+    </div>
+
+    <div class="divider my-0"></div>
+    <h2 class="text-lg font-semibold">TradeMe credentials</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Email</span></div>
+        <input name="trademe_email" type="email" value="{{ s['trademe_email'] }}"
+               class="input input-bordered w-full"></label>
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Password</span></div>
+        <input name="trademe_password" type="password"
+               class="input input-bordered w-full"
+               placeholder="{{ '•••••• (saved)' if have_password else 'set password' }}">
+      </label>
+    </div>
+    <p class="text-xs text-base-content/60">Stored encrypted on this server. Used only to drive the TradeMe
+      login page; you'll still enter your 2FA code on the <a class="link link-primary" href="/login">Account</a> page.</p>
+
+    <div>
+      <button class="btn btn-primary">Save settings</button>
+    </div>
+  </div>
 </form>
 {% endblock %}

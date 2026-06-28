@@ -1,38 +1,47 @@
 {% extends "base.html" %}
 {% block title %}{{ job.title or job.listing_id }} · BidBud-NG{% endblock %}
 {% block content %}
-<p><a href="/">← Dashboard</a></p>
-<h1>{{ job.title or job.listing_id }}</h1>
-<p><a href="{{ job.url }}" target="_blank" rel="noopener">View on TradeMe ↗</a></p>
+<div class="text-sm mb-2"><a class="link link-hover" href="/">← Dashboard</a></div>
+<h1 class="text-2xl font-bold">{{ job.title or job.listing_id }}</h1>
+<p class="mb-4">
+  <a class="link link-primary" href="{{ job.url }}" target="_blank" rel="noopener">View on TradeMe ↗</a>
+</p>
 
-<div class="card">
-  <div class="grid">
-    <div><span class="k">Status</span>{{ job.status }}</div>
-    <div><span class="k">Strategy</span>{{ STRATEGY_LABELS.get(job.strategy, job.strategy) }}</div>
-    <div><span class="k">Your max</span>{{ job.max_bid | money }}</div>
-    <div><span class="k">Current</span>{{ job.current_price | money }}
-        {% if job.is_leader %}(leading){% endif %}</div>
-    <div><span class="k">Min next</span>{{ job.min_next_bid | money }}</div>
-    <div><span class="k">Bids</span>{{ job.bid_count }}</div>
-    <div><span class="k">Closes</span>{{ job.end_date | nztime }} ({{ job.end_date | timeleft }})</div>
-    <div><span class="k">Last action</span>{{ job.last_action or '—' }}</div>
-  </div>
-  <div class="opts">
-    Options: {% for k,v in options.items() %}<code>{{ k }}={{ v }}</code> {% endfor %}
+<div class="card bg-base-100 shadow mb-6">
+  <div class="card-body">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Status</span>{{ job.status }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Strategy</span>{{ STRATEGY_LABELS.get(job.strategy, job.strategy) }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Your max</span>{{ job.max_bid | money }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Current</span>{{ job.current_price | money }}
+          {% if job.is_leader %}<span class="badge badge-success badge-sm">leading</span>{% endif %}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Min next</span>{{ job.min_next_bid | money }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Bids</span>{{ job.bid_count }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Closes</span>{{ job.end_date | nztime }} ({{ job.end_date | timeleft }})</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Last action</span>{{ job.last_action or '—' }}</div>
+    </div>
+    <div class="mt-3 text-xs text-base-content/60 flex flex-wrap items-center gap-1">
+      <span>Options:</span>
+      {% for k,v in options.items() %}<code class="badge badge-ghost badge-sm font-mono">{{ k }}={{ v }}</code>{% endfor %}
+    </div>
   </div>
 </div>
 
-<h2>Activity log</h2>
-<table class="logs">
-  <tbody>
-  {% for l in logs %}
-    <tr class="lvl-{{ l.level }}">
-      <td class="ts">{{ l.ts | nztime }}</td>
-      <td>{{ l.level }}</td>
-      <td>{{ l.message }}</td>
-    </tr>
-  {% endfor %}
-  {% if not logs %}<tr><td colspan="3" class="empty">No activity yet.</td></tr>{% endif %}
-  </tbody>
-</table>
+<h2 class="text-lg font-semibold mb-2">Activity log</h2>
+<div class="card bg-base-100 shadow">
+  <div class="card-body p-0 overflow-x-auto">
+    <table class="table table-sm">
+      <tbody>
+      {% for l in logs %}
+        <tr class="{% if l.level == 'error' %}text-error{% elif l.level == 'warn' %}text-warning{% endif %}">
+          <td class="text-base-content/60 whitespace-nowrap">{{ l.ts | nztime }}</td>
+          <td>{{ l.level }}</td>
+          <td>{{ l.message }}</td>
+        </tr>
+      {% endfor %}
+      {% if not logs %}<tr><td colspan="3" class="text-center text-base-content/60 py-6">No activity yet.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

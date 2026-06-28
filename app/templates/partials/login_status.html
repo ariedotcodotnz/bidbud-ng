@@ -1,7 +1,7 @@
 {% if logged_in %}
-  <span class="pill ok" title="member {{ member_id }}">● Logged in</span>
+  <span class="badge badge-success gap-1" title="member {{ member_id }}">● Logged in</span>
 {% elif login.busy %}
-  <span class="pill warn">● {{ login.state.replace('_',' ') }}</span>
+  <span class="badge badge-warning gap-1">● {{ login.state.replace('_',' ') }}</span>
 {% else %}
-  <a class="pill bad" href="/login">● Not logged in</a>
+  <a class="badge badge-error gap-1" href="/login">● Not logged in</a>
 {% endif %}

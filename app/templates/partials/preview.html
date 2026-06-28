@@ -1,74 +1,82 @@
 {% if error %}
-  <div class="banner bad">{{ error }}</div>
+  <div class="alert alert-error"><span>{{ error }}</span></div>
 {% elif preview %}
-<div class="card">
-  <h2>{{ preview.title }}</h2>
-  <div class="grid">
-    <div><span class="k">Current bid</span>{{ preview.current_price | money }}</div>
-    <div><span class="k">Min next bid</span>{{ preview.min_next_bid | money }}</div>
-    <div><span class="k">Bids</span>{{ preview.bid_count }}</div>
-    <div><span class="k">Reserve</span>{{ 'met' if preview.reserve_met else 'not met' }}</div>
-    <div><span class="k">Closes</span>{{ preview.end_date.isoformat() | nztime }}
-         ({{ preview.end_date.isoformat() | timeleft }})</div>
-    <div><span class="k">You lead?</span>{{ 'yes' if preview.is_leader else 'no' }}</div>
-  </div>
-
-  <form method="post" action="/listings" class="stack">
-    <input type="hidden" name="url" value="{{ url }}">
-    <input type="hidden" name="listing_id" value="{{ listing_id }}">
-    <input type="hidden" name="title" value="{{ preview.title }}">
-    <input type="hidden" name="end_date" value="{{ preview.end_date.isoformat() }}">
-    <input type="hidden" name="current_price" value="{{ preview.current_price }}">
-
-    <div class="row">
-      <label>Your maximum bid (NZD)
-        <input name="max_bid" type="number" step="0.01" min="0.01"
-               value="{{ suggested }}" required>
-      </label>
-      <label>Strategy
-        <select name="strategy">
-          {% for s in STRATEGIES %}
-          <option value="{{ s }}" {{ 'selected' if s == default_strategy else '' }}>
-            {{ STRATEGY_LABELS[s] }}</option>
-          {% endfor %}
-        </select>
-      </label>
+<div class="card bg-base-100 shadow">
+  <div class="card-body">
+    <h2 class="card-title">{{ preview.title }}</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Current bid</span>{{ preview.current_price | money }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Min next bid</span>{{ preview.min_next_bid | money }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Bids</span>{{ preview.bid_count }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Reserve</span>{{ 'met' if preview.reserve_met else 'not met' }}</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">Closes</span>{{ preview.end_date.isoformat() | nztime }}
+           ({{ preview.end_date.isoformat() | timeleft }})</div>
+      <div><span class="block text-xs text-base-content/60 mb-0.5">You lead?</span>{{ 'yes' if preview.is_leader else 'no' }}</div>
     </div>
 
-    {% if preview.shipping_options or preview.allows_pickups %}
-    <label>Delivery (added on top of your winning bid)
-      <select name="shipping_choice">
-        <optgroup label="This listing's options">
-          {% if preview.allows_pickups %}
-          <option value="pickup" {{ 'selected' if not preview.shipping_options else '' }}>
-            Pick-up (free)</option>
-          {% endif %}
-          {% for so in preview.shipping_options %}
-          <option value="{{ so.shipping_id }}"
-            {{ 'selected' if (shipping_default not in ('cheapest','dearest','none','pickup')
-                              and shipping_default == so.shipping_id|string) else '' }}>
-            {{ so.method }} — {{ so.price | money }}</option>
-          {% endfor %}
-        </optgroup>
-        {% if preview.shipping_options %}
-        <optgroup label="Automatic (shipping)">
-          <option value="cheapest" {{ 'selected' if shipping_default == 'cheapest' else '' }}>
-            Cheapest available</option>
-          <option value="dearest" {{ 'selected' if shipping_default == 'dearest' else '' }}>
-            Most expensive</option>
-        </optgroup>
-        {% endif %}
-      </select>
-    </label>
-    {% else %}
-    <input type="hidden" name="shipping_choice" value="none">
-    <p class="hint">No delivery options to choose for this listing.</p>
-    {% endif %}
+    <form method="post" action="/listings" class="flex flex-col gap-3 mt-4">
+      <input type="hidden" name="url" value="{{ url }}">
+      <input type="hidden" name="listing_id" value="{{ listing_id }}">
+      <input type="hidden" name="title" value="{{ preview.title }}">
+      <input type="hidden" name="end_date" value="{{ preview.end_date.isoformat() }}">
+      <input type="hidden" name="current_price" value="{{ preview.current_price }}">
 
-    <button class="btn primary">Schedule bid</button>
-    <p class="hint">All strategies act within the final 2 minutes. Per-listing
-      options (cents, shipping, reminders) are taken from your
-      <a href="/settings">settings</a> at the moment you schedule.</p>
-  </form>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="form-control w-full">
+          <div class="label py-1"><span class="label-text">Your maximum bid (NZD)</span></div>
+          <input name="max_bid" type="number" step="0.01" min="0.01"
+                 class="input input-bordered w-full"
+                 value="{{ suggested }}" required>
+        </label>
+        <label class="form-control w-full">
+          <div class="label py-1"><span class="label-text">Strategy</span></div>
+          <select name="strategy" class="select select-bordered w-full">
+            {% for s in STRATEGIES %}
+            <option value="{{ s }}" {{ 'selected' if s == default_strategy else '' }}>
+              {{ STRATEGY_LABELS[s] }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      {% if preview.shipping_options or preview.allows_pickups %}
+      <label class="form-control w-full">
+        <div class="label py-1"><span class="label-text">Delivery (added on top of your winning bid)</span></div>
+        <select name="shipping_choice" class="select select-bordered w-full">
+          <optgroup label="This listing's options">
+            {% if preview.allows_pickups %}
+            <option value="pickup" {{ 'selected' if not preview.shipping_options else '' }}>
+              Pick-up (free)</option>
+            {% endif %}
+            {% for so in preview.shipping_options %}
+            <option value="{{ so.shipping_id }}"
+              {{ 'selected' if (shipping_default not in ('cheapest','dearest','none','pickup')
+                                and shipping_default == so.shipping_id|string) else '' }}>
+              {{ so.method }} — {{ so.price | money }}</option>
+            {% endfor %}
+          </optgroup>
+          {% if preview.shipping_options %}
+          <optgroup label="Automatic (shipping)">
+            <option value="cheapest" {{ 'selected' if shipping_default == 'cheapest' else '' }}>
+              Cheapest available</option>
+            <option value="dearest" {{ 'selected' if shipping_default == 'dearest' else '' }}>
+              Most expensive</option>
+          </optgroup>
+          {% endif %}
+        </select>
+      </label>
+      {% else %}
+      <input type="hidden" name="shipping_choice" value="none">
+      <p class="text-xs text-base-content/60">No delivery options to choose for this listing.</p>
+      {% endif %}
+
+      <div>
+        <button class="btn btn-primary">Schedule bid</button>
+      </div>
+      <p class="text-xs text-base-content/60">All strategies act within the final 2 minutes. Per-listing
+        options (cents, shipping, reminders) are taken from your
+        <a class="link link-primary" href="/settings">settings</a> at the moment you schedule.</p>
+    </form>
+  </div>
 </div>
 {% endif %}

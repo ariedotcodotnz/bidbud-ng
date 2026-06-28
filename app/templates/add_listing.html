@@ -1,18 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Add listing · BidBud-NG{% endblock %}
 {% block content %}
-<h1>Add a listing</h1>
+<h1 class="text-2xl font-bold mb-4">Add a listing</h1>
 
-<form class="card stack" hx-post="/listings/preview" hx-target="#preview"
+<form class="card bg-base-100 shadow" hx-post="/listings/preview" hx-target="#preview"
       hx-swap="innerHTML">
-  <label>TradeMe listing URL or number
-    <input name="url" placeholder="https://www.trademe.co.nz/a/.../listing/6006426545"
-           required>
-  </label>
-  <button class="btn">Look up listing →</button>
-  <p class="hint">We read the listing's current price, closing time and minimum
-    next bid so you can set your maximum and strategy.</p>
+  <div class="card-body flex flex-col gap-3">
+    <label class="form-control w-full">
+      <div class="label py-1"><span class="label-text">TradeMe listing URL or number</span></div>
+      <input name="url" class="input input-bordered w-full"
+             placeholder="https://www.trademe.co.nz/a/.../listing/6006426545"
+             required>
+    </label>
+    <div>
+      <button class="btn btn-primary">Look up listing →</button>
+    </div>
+    <p class="text-xs text-base-content/60">We read the listing's current price, closing time and minimum
+      next bid so you can set your maximum and strategy.</p>
+  </div>
 </form>
 
-<div id="preview"></div>
+<div id="preview" class="mt-4"></div>
 {% endblock %}

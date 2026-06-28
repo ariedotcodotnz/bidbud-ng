@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-head">
-  <h1>Watched auctions</h1>
-  <a class="btn" href="/add">+ Add listing</a>
+<div class="flex items-center justify-between gap-4 mb-4">
+  <h1 class="text-2xl font-bold">Watched auctions</h1>
+  <a class="btn btn-primary" href="/add">+ Add listing</a>
 </div>
 
 {% if not logged_in %}
-<div class="banner warn">
-  You're not logged in to TradeMe — bids won't be placed until you
-  <a href="/login">log in</a>.
+<div class="alert alert-warning mb-4">
+  <span>
+    You're not logged in to TradeMe — bids won't be placed until you
+    <a class="link link-hover font-semibold" href="/login">log in</a>.
+  </span>
 </div>
 {% endif %}
 

@@ -1,49 +1,64 @@
 {% set badge = {
-  'scheduled':'warn','active':'live','won':'ok','lost':'bad',
-  'error':'bad','cancelled':'muted','done':'ok'} %}
+  'scheduled':'badge-warning','active':'badge-secondary','won':'badge-success',
+  'lost':'badge-error','error':'badge-error','cancelled':'badge-ghost',
+  'done':'badge-success'} %}
 {% if not jobs %}
-  <p class="empty">No auctions yet. <a href="/add">Add one</a>.</p>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body items-center text-center text-base-content/60">
+      <p>No auctions yet. <a class="link link-primary" href="/add">Add one</a>.</p>
+    </div>
+  </div>
 {% else %}
-<table class="jobs">
-  <thead>
-    <tr>
-      <th>Listing</th><th>Strategy</th><th>Current</th><th>Max</th>
-      <th>Closes</th><th>Status</th><th>Last action</th><th></th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for j in jobs %}
-    <tr>
-      <td class="listing">
-        <a href="/jobs/{{ j.id }}">{{ j.title or j.listing_id }}</a>
-        <div class="sub"><a href="{{ j.url }}" target="_blank" rel="noopener">#{{ j.listing_id }} ↗</a></div>
-      </td>
-      <td>{{ STRATEGY_LABELS.get(j.strategy, j.strategy) }}</td>
-      <td>
-        {{ j.current_price | money }}
-        {% if j.is_leader %}<span class="pill ok sm">leading</span>{% endif %}
-        {% if j.reserve_met %}<span class="pill muted sm">reserve met</span>{% endif %}
-      </td>
-      <td>{{ j.max_bid | money }}</td>
-      <td>
-        <div>{{ j.end_date | timeleft }}</div>
-        <div class="sub">{{ j.end_date | nztime }}</div>
-      </td>
-      <td><span class="pill {{ badge.get(j.status,'muted') }}">{{ j.status }}</span></td>
-      <td class="action">{{ j.last_action or '—' }}</td>
-      <td class="ctl">
-        {% if j.status in ('scheduled','active') %}
-        <form method="post" action="/jobs/{{ j.id }}/cancel">
-          <button class="link">cancel</button>
-        </form>
-        {% endif %}
-        <form method="post" action="/jobs/{{ j.id }}/delete"
-              onsubmit="return confirm('Delete this job?')">
-          <button class="link danger">delete</button>
-        </form>
-      </td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div class="card bg-base-100 shadow">
+  <div class="card-body p-0 overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Listing</th><th>Strategy</th><th>Current</th><th>Max</th>
+          <th>Closes</th><th>Status</th><th>Last action</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for j in jobs %}
+        <tr class="hover">
+          <td>
+            <a class="link link-primary font-semibold" href="/jobs/{{ j.id }}">{{ j.title or j.listing_id }}</a>
+            <div class="text-xs text-base-content/60">
+              <a class="link link-hover" href="{{ j.url }}" target="_blank" rel="noopener">#{{ j.listing_id }} ↗</a>
+            </div>
+          </td>
+          <td>{{ STRATEGY_LABELS.get(j.strategy, j.strategy) }}</td>
+          <td>
+            <div class="flex flex-wrap items-center gap-1">
+              <span>{{ j.current_price | money }}</span>
+              {% if j.is_leader %}<span class="badge badge-success badge-sm">leading</span>{% endif %}
+              {% if j.reserve_met %}<span class="badge badge-ghost badge-sm">reserve met</span>{% endif %}
+            </div>
+          </td>
+          <td>{{ j.max_bid | money }}</td>
+          <td>
+            <div>{{ j.end_date | timeleft }}</div>
+            <div class="text-xs text-base-content/60">{{ j.end_date | nztime }}</div>
+          </td>
+          <td><span class="badge {{ badge.get(j.status,'badge-ghost') }}">{{ j.status }}</span></td>
+          <td class="max-w-xs text-base-content/70">{{ j.last_action or '—' }}</td>
+          <td>
+            <div class="flex items-center gap-2">
+              {% if j.status in ('scheduled','active') %}
+              <form method="post" action="/jobs/{{ j.id }}/cancel">
+                <button class="btn btn-ghost btn-xs">cancel</button>
+              </form>
+              {% endif %}
+              <form method="post" action="/jobs/{{ j.id }}/delete"
+                    onsubmit="return confirm('Delete this job?')">
+                <button class="btn btn-ghost btn-xs text-error">delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
