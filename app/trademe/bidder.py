@@ -107,8 +107,11 @@ async def place_bid(
                 state="visible", timeout=15_000
             )
         except PWTimeout:
-            return BidResult(False, "Bidding box / 'Place bid' button not found "
-                                    "(listing may be closed).")
+            return BidResult(
+                ok=False,
+                message="Bidding box / 'Place bid' button not found "
+                        "(listing may be closed).",
+            )
 
         await page.locator(PLACE_BID_BUTTON).first.click()
 
@@ -140,8 +143,8 @@ async def place_bid(
             if not ok:
                 await _shot(page, "delivery-option-missing")
                 return BidResult(
-                    False,
-                    f"Delivery option '{shipping_method}' was not found in the bid form.",
+                    ok=False,
+                    message=f"Delivery option '{shipping_method}' was not found in the bid form.",
                     amount=amount,
                     autobid=autobid,
                     submitted=False,
@@ -158,8 +161,8 @@ async def place_bid(
                 if not ok:
                     await _shot(page, "delivery-option-missing")
                     return BidResult(
-                        False,
-                        "Selected shipping option was not found in the bid form.",
+                        ok=False,
+                        message="Selected shipping option was not found in the bid form.",
                         amount=amount,
                         autobid=autobid,
                         submitted=False,
@@ -201,8 +204,10 @@ async def place_bid(
         err = await _read_error(page)
         if err:
             await _shot(page, "bid-rejected")
-            return BidResult(False, f"TradeMe rejected the bid: {err}",
-                             amount=amount, autobid=autobid, submitted=False)
+            return BidResult(
+                ok=False, message=f"TradeMe rejected the bid: {err}",
+                amount=amount, autobid=autobid, submitted=False,
+            )
 
         # The submit went through without an explicit rejection.
         # Verify by re-reading authoritative state.
@@ -210,17 +215,23 @@ async def place_bid(
         if verified:
             db.log(None, "info", f"Bid placed {fmt(amount)} "
                                  f"({'autobid' if autobid else 'normal'}) – {detail}")
-            return BidResult(True, detail, amount=amount, autobid=autobid,
-                             submitted=True)
+            return BidResult(
+                ok=True, message=detail, amount=amount, autobid=autobid,
+                submitted=True,
+            )
 
         await _shot(page, "bid-unverified")
-        return BidResult(False, f"Bid submitted but could not verify ({detail}).",
-                         amount=amount, autobid=autobid, submitted=True)
+        return BidResult(
+            ok=False, message=f"Bid submitted but could not verify ({detail}).",
+            amount=amount, autobid=autobid, submitted=True,
+        )
 
     except Exception as exc:  # noqa: BLE001
         await _shot(page, "bid-exception")
-        return BidResult(False, f"Exception while bidding: {exc}",
-                         amount=amount, autobid=autobid, submitted=False)
+        return BidResult(
+            ok=False, message=f"Exception while bidding: {exc}",
+            amount=amount, autobid=autobid, submitted=False,
+        )
 
 
 async def _maybe_confirm(page: Page) -> None:

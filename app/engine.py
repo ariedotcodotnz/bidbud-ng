@@ -213,7 +213,8 @@ async def _execute(
 
     def failed(message: str) -> BidResult:
         result = BidResult(
-            False, message, amount=amount, autobid=autobid, submitted=False
+            ok=False, message=message, amount=amount, autobid=autobid,
+            submitted=False,
         )
         db.update_job(job_id, last_action=result.message)
         db.log(job_id, "warn", result.message)

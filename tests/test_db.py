@@ -1,5 +1,8 @@
 import json
 
+from sqlalchemy import inspect, text
+from sqlmodel import Session
+
 from app import db
 
 
@@ -25,6 +28,15 @@ class TestSettings:
     def test_get_int_handles_bad_value(self, temp_db):
         db.set_setting("snipe_seconds", "not-a-number")
         assert db.get_int("snipe_seconds", 99) == 99
+
+
+class TestMigrations:
+    def test_init_db_records_alembic_revision(self, temp_db):
+        inspector = inspect(db.engine())
+        assert inspector.has_table("alembic_version")
+        with Session(db.engine()) as session:
+            rev = session.exec(text("SELECT version_num FROM alembic_version")).one()
+        assert rev[0] == "0001_initial_schema"
 
 
 class TestJobs:

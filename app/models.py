@@ -1,11 +1,15 @@
-"""Typed value objects shared across modules."""
+"""Typed value objects and SQLModel tables shared across the app."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Any
 
-from .money import D, ZERO
+from pydantic import BaseModel, ConfigDict, Field as PydanticField
+from sqlalchemy import Column, Text
+from sqlmodel import Field, SQLModel
+
+from .money import ZERO
 
 
 # The four BidBud strategies.
@@ -18,16 +22,19 @@ STRATEGY_LABELS = {
 }
 
 
-@dataclass
-class ShippingOption:
+# --------------------------------------------------------------------------- #
+# Pydantic runtime models
+# --------------------------------------------------------------------------- #
+class ShippingOption(BaseModel):
     shipping_id: str
     method: str
     price: Decimal
 
 
-@dataclass
-class ListingState:
+class ListingState(BaseModel):
     """A snapshot of a listing parsed from the embedded ``#frend-state`` JSON."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     listing_id: str
     title: str
@@ -40,10 +47,10 @@ class ListingState:
     reserve_state: int
     leading_bidder_id: int | None
     my_member_id: int | None
-    shipping_options: list[ShippingOption] = field(default_factory=list)
+    shipping_options: list[ShippingOption] = PydanticField(default_factory=list)
     allows_pickups: bool = False
     has_ping: bool = False
-    raw: dict | None = None
+    raw: dict[str, Any] | None = None
 
     # -- derived ----------------------------------------------------------- #
     @property
@@ -81,10 +88,51 @@ class ListingState:
         return max(self.shipping_options, key=lambda s: s.price)
 
 
-@dataclass
-class BidResult:
+class BidResult(BaseModel):
     ok: bool                # verified the bid took effect
     message: str
     amount: Decimal = ZERO
     autobid: bool = False
     submitted: bool = False  # we clicked submit without an explicit rejection
+
+
+# --------------------------------------------------------------------------- #
+# SQLModel tables
+# --------------------------------------------------------------------------- #
+class Setting(SQLModel, table=True):
+    __tablename__ = "settings"
+
+    key: str = Field(primary_key=True)
+    value: str | None = None
+
+
+class Job(SQLModel, table=True):
+    __tablename__ = "jobs"
+
+    id: int | None = Field(default=None, primary_key=True)
+    listing_id: str
+    url: str
+    title: str | None = None
+    strategy: str
+    max_bid: str
+    status: str = "scheduled"
+    end_date: str | None = None
+    current_price: str | None = None
+    min_next_bid: str | None = None
+    bid_count: int = Field(default=0, nullable=True)
+    is_leader: int = Field(default=0, nullable=True)
+    reserve_met: int = Field(default=0, nullable=True)
+    last_action: str | None = None
+    options: str | None = Field(default=None, sa_column=Column(Text))
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class BidLog(SQLModel, table=True):
+    __tablename__ = "bid_log"
+
+    id: int | None = Field(default=None, primary_key=True)
+    job_id: int | None = None
+    ts: str
+    level: str
+    message: str = Field(sa_column=Column(Text, nullable=False))

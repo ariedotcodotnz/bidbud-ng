@@ -46,11 +46,11 @@ class TestListingState:
         assert make_state(bid_count=0).has_bids is False
 
 
-def test_shipping_option_dataclass():
-    so = ShippingOption("4", "Auckland", D(9))
+def test_shipping_option_model():
+    so = ShippingOption(shipping_id="4", method="Auckland", price=D(9))
     assert so.shipping_id == "4" and so.price == D(9)
 
 
 def test_bid_result_defaults():
-    r = BidResult(True, "ok")
+    r = BidResult(ok=True, message="ok")
     assert r.amount == ZERO and r.autobid is False and r.submitted is False

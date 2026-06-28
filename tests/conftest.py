@@ -10,12 +10,7 @@ from .factories import DummyPage
 
 
 def _close_conn() -> None:
-    if db._CONN is not None:
-        try:
-            db._CONN.close()
-        except Exception:
-            pass
-    db._CONN = None
+    db.reset_engine()
 
 
 @pytest.fixture

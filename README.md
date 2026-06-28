@@ -108,10 +108,10 @@ run.py                 # loads .env, starts uvicorn
 app/
   main.py              # FastAPI app, routes, HTMX pages
   config.py            # env/paths
-  db.py                # SQLite (settings, jobs, bid_log)
+  db.py                # SQLModel sessions + Alembic-backed SQLite persistence
   security.py          # Fernet password encryption
   money.py             # Decimal money + bid-increment + cents logic
-  models.py            # ListingState, BidResult, strategy list
+  models.py            # Pydantic runtime models + SQLModel table models
   strategies.py        # the four strategies as pure decision functions
   engine.py            # per-job timing loop: poll -> decide -> bid -> verify
   scheduler.py         # APScheduler supervisor (one engine per active job)
@@ -121,7 +121,19 @@ app/
     listing.py         # parse listing state from embedded #frend-state JSON
     bidder.py          # drive the bid modal (amount, shipping, autobid, submit)
   templates/  static/  # HTMX dashboard
-tests/                 # pytest suite (139 tests)
+alembic/               # database migrations
+tests/                 # pytest suite (140 tests)
+```
+
+### Database migrations
+
+SQLite persistence is modeled with SQLModel and versioned with Alembic. The app
+runs migrations automatically on startup; existing pre-Alembic databases are
+stamped at the initial revision when the current schema is already present.
+
+```bash
+.venv/bin/alembic upgrade head
+.venv/bin/alembic current
 ```
 
 ### Tests
@@ -136,7 +148,7 @@ network.
 
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest            # 139 passed
+.venv/bin/python -m pytest            # 140 passed
 .venv/bin/python -m pytest -v         # verbose
 .venv/bin/python -m pytest tests/test_strategies.py   # one module
 ```

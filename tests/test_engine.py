@@ -94,7 +94,10 @@ def _patch(monkeypatch, sim, *, place_effect=True, sleep_hook=None):
         })
         if place_effect:
             sim.apply_bid(amount, autobid)
-        return BidResult(True, "ok", amount=amount, autobid=autobid, submitted=True)
+        return BidResult(
+            ok=True, message="ok", amount=amount, autobid=autobid,
+            submitted=True,
+        )
 
     n = {"i": 0}
 
@@ -205,7 +208,7 @@ async def test_pickup_unavailable_skips_before_bidding(temp_db, monkeypatch):
 
     async def fake_place(*a, **k):
         called["place"] = True
-        return BidResult(True, "should not happen", submitted=True)
+        return BidResult(ok=True, message="should not happen", submitted=True)
 
     bm = browser_mod.browser
     monkeypatch.setattr(bm, "fetch_html", fetch)

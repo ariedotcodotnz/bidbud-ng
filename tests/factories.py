@@ -92,7 +92,10 @@ def make_state(
     allows_pickups: bool = False,
 ) -> ListingState:
     end = datetime.now(timezone.utc) + timedelta(seconds=seconds_left)
-    opts = [ShippingOption(str(s), m, D(p)) for s, m, p in (shipping or [])]
+    opts = [
+        ShippingOption(shipping_id=str(s), method=m, price=D(p))
+        for s, m, p in (shipping or [])
+    ]
     return ListingState(
         listing_id="1", title="T", end_date=end,
         current_price=D(current), min_next_bid=D(min_next), start_price=D(start),
