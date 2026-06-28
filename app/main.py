@@ -8,7 +8,9 @@ from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
+from fastapi import (
+    Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +23,7 @@ from .strategies import StrategyConfig  # noqa: F401 (kept for clarity)
 from .trademe import listing as listing_mod
 from .trademe.auth import login_manager
 from .trademe.browser import browser
+from .trademe.session import parse_session_blob
 
 NZ = ZoneInfo("Pacific/Auckland")
 
@@ -206,6 +209,40 @@ async def login_start(email: str = Form(""), password: str = Form("")):
 @app.post("/login/2fa", dependencies=[Depends(require_ui)])
 async def login_2fa(code: str = Form(...)):
     await login_manager.submit_code(code)
+    return RedirectResponse("/login", status_code=303)
+
+
+@app.post("/session/import", dependencies=[Depends(require_ui)])
+async def import_session(
+    session_text: str = Form(""),
+    session_file: UploadFile | None = File(None),
+):
+    """Import a human-obtained TradeMe session (file upload or pasted text)."""
+    raw = session_text or ""
+    if session_file is not None:
+        content = await session_file.read()
+        if content:
+            raw = content.decode("utf-8", "ignore")
+    try:
+        state = parse_session_blob(raw)
+    except ValueError as exc:
+        login_manager.state = "error"
+        login_manager.message = f"Session import failed: {exc}"
+        return RedirectResponse("/login", status_code=303)
+
+    member_id = await browser.apply_storage_state(state)
+    if member_id:
+        login_manager.member_id = member_id
+        login_manager.state = "success"
+        login_manager.message = f"Session imported (member {member_id})."
+        db.log(None, "info", login_manager.message)
+    else:
+        login_manager.state = "error"
+        login_manager.message = (
+            "Imported the cookies, but no valid TradeMe session was detected — "
+            "they may be expired or incomplete."
+        )
+        db.log(None, "warn", login_manager.message)
     return RedirectResponse("/login", status_code=303)
 
 

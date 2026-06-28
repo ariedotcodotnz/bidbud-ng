@@ -54,8 +54,34 @@
           <button class="btn btn-primary">Log in</button>
         </form>
         <p class="text-xs text-base-content/60 mt-2">Credentials are stored encrypted on this server only and
-          used to drive the TradeMe login page. After login, a session cookie file
-          is saved so this is rarely needed.</p>
+          used to drive the TradeMe login page. Note: TradeMe may block automated
+          logins with a bot-challenge (CAPTCHA), especially from a VPS — if so,
+          use <b>Import session</b> below.</p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow max-w-md mt-4">
+      <div class="card-body">
+        <h2 class="card-title">Import session</h2>
+        <p class="text-sm text-base-content/70">
+          Log in to TradeMe in your normal browser (where there's no challenge),
+          then bring that session here. Either upload a
+          <code>storage_state.json</code> (produced by
+          <code>tools/get_session.py</code>) or paste your TradeMe cookies. See
+          the README for details.
+        </p>
+        <form method="post" action="/session/import" enctype="multipart/form-data"
+              class="flex flex-col gap-3 mt-2">
+          <label class="form-control w-full">
+            <div class="label py-1"><span class="label-text">storage_state.json file</span></div>
+            <input type="file" name="session_file" accept=".json,application/json"
+                   class="file-input file-input-bordered w-full">
+          </label>
+          <div class="divider text-xs">or paste cookies / JSON</div>
+          <textarea name="session_text" rows="4" class="textarea textarea-bordered w-full"
+                    placeholder='A storage_state JSON, a Cookie-Editor JSON export, or a "name=value; name2=value2" cookie header'></textarea>
+          <button class="btn btn-secondary">Import session</button>
+        </form>
       </div>
     </div>
   {% endif %}

@@ -1,3 +1,5 @@
+import json
+
 from app import config, db
 from .factories import frend_html
 
@@ -122,6 +124,41 @@ class TestJobLifecycle:
             "strategy": "fast", "max_bid": "0",
         })
         assert r.status_code == 400
+
+
+class TestSessionImport:
+    def test_import_valid_session(self, api, monkeypatch):
+        client, _ = api
+        from app.trademe.browser import browser as bm
+        from app.trademe.auth import login_manager
+
+        async def fake_apply(state):
+            assert state["cookies"] and "trademe" in state["cookies"][0]["domain"]
+            return 4242
+
+        monkeypatch.setattr(bm, "apply_storage_state", fake_apply)
+        blob = json.dumps({"cookies": [
+            {"name": "idsrv", "value": "x", "domain": ".trademe.co.nz", "path": "/"}
+        ], "origins": []}).encode()
+
+        r = client.post("/session/import",
+                        files={"session_file": ("s.json", blob, "application/json")})
+        assert r.status_code == 200  # followed redirect to /login
+        assert login_manager.member_id == 4242
+        assert login_manager.state == "success"
+
+    def test_import_invalid_session(self, api):
+        client, _ = api
+        from app.trademe.auth import login_manager
+        r = client.post("/session/import",
+                        files={"session_file": ("s.json", b"garbage", "application/json")})
+        assert r.status_code == 200
+        assert login_manager.state == "error"
+        assert "failed" in login_manager.message.lower()
+
+    def test_login_page_shows_import_card(self, api):
+        client, _ = api
+        assert "Import session" in client.get("/login").text
 
 
 class TestBasicAuth:

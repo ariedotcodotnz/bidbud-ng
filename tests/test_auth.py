@@ -53,6 +53,37 @@ class TestStart:
         assert lm._task is None
 
 
+class _ChFrame:
+    def __init__(self, count=0, title=""):
+        self._count = count
+        self._title = title
+
+    def locator(self, sel):
+        count = self._count
+
+        class _L:
+            async def count(self_inner):
+                return count
+
+        return _L()
+
+    async def title(self):
+        return self._title
+
+
+class TestChallengeDetection:
+    async def test_detects_capinput(self):
+        assert await LoginManager()._is_challenge(_ChFrame(count=1)) is True
+
+    async def test_detects_by_title(self):
+        frame = _ChFrame(count=0, title="Client Challenge")
+        assert await LoginManager()._is_challenge(frame) is True
+
+    async def test_no_challenge_on_login_form(self):
+        frame = _ChFrame(count=0, title="Log in | Trade Me")
+        assert await LoginManager()._is_challenge(frame) is False
+
+
 class FakeLoc:
     def __init__(self, visible=False):
         self.visible = visible

@@ -114,6 +114,14 @@ class LoginManager:
             if frame is None:
                 raise RuntimeError("Could not find the login iframe.")
 
+            if await self._is_challenge(frame):
+                raise RuntimeError(
+                    "TradeMe served a bot-detection challenge (CAPTCHA) instead "
+                    "of the login form, so automated login isn't possible from "
+                    "this server. Use 'Import session' on the Account page "
+                    "instead (see the README)."
+                )
+
             await self._fill_username(frame, email)
             password_input = await self._fill_password(frame, password)
             await self._submit(
@@ -191,6 +199,16 @@ class LoginManager:
                     return frame
             await asyncio.sleep(0.5)
         return None
+
+    async def _is_challenge(self, frame: Frame) -> bool:
+        """Detect TradeMe's F5/Shape bot-challenge (CAPTCHA) interstitial."""
+        try:
+            if await frame.locator("#capInput, #capForm, #capSubmit").count():
+                return True
+            title = (await frame.title()) or ""
+            return "challenge" in title.lower()
+        except Exception:
+            return False
 
     async def _first_visible(self, frame: Frame, selectors, timeout: float):
         """Poll until one of ``selectors`` is visible in the frame, or give up."""

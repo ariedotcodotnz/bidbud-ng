@@ -63,12 +63,43 @@ cp .env.example .env        # then edit if you like
 
 Open <http://SERVER:8000>.
 
-1. Go to **Account** → enter your TradeMe email + password → **Log in**.
-2. When prompted, type the 2FA code TradeMe sends → the session is saved.
-3. **Add listing** → paste a listing URL (or number) → **Look up** → set your
+1. Go to **Account** and authenticate (see below).
+2. **Add listing** → paste a listing URL (or number) → **Look up** → set your
    maximum bid + strategy → **Schedule bid**.
-4. Watch it on the dashboard. Leave the process running 24/7 (a VPS is ideal so
+3. Watch it on the dashboard. Leave the process running 24/7 (a VPS is ideal so
    bids fire even when your laptop is off).
+
+### Authenticating (important)
+
+TradeMe's **login page is protected by an F5/Shape bot-challenge (a CAPTCHA)**
+that is shown to automated/headless browsers — especially from a VPS/datacenter
+IP. So fully automated login (email + password + 2FA in the tool) **often won't
+work**: the tool will report that a bot-challenge was served. Everything *after*
+login (reading listings, placing bids) runs on `www.trademe.co.nz`, which is
+**not** challenged — so the fix is to authenticate as a human once and import
+that session.
+
+**Option A — automated login (try first).** On the **Account** page, enter your
+email + password and log in; if prompted, type the 2FA code. If TradeMe shows
+the bot-challenge, you'll get a clear message telling you to use Option B.
+
+**Option B — import a session (reliable).** Log in to TradeMe in your **normal
+browser** (no challenge for a human), then bring that session to the tool:
+
+- *Easiest:* run the helper on a machine with a real browser (e.g. your laptop):
+  ```bash
+  pip install playwright && python -m playwright install chromium
+  python -m tools.get_session     # opens a browser; log in; press Enter
+  ```
+  It writes `trademe_session.json`. On the **Account → Import session** card,
+  upload that file (or copy it to the server as `data/storage_state.json`).
+- *Or* paste cookies: in your logged-in browser, export your trademe.co.nz
+  cookies (e.g. the "Cookie-Editor" extension → *Export* as JSON) and paste them
+  into the **Import session** box. A raw `name=value; name2=value2` cookie header
+  also works.
+
+The imported session is saved to `data/storage_state.json` and reused; refresh
+it the same way when it eventually expires.
 
 ### Protecting the dashboard
 
@@ -122,7 +153,7 @@ app/
     bidder.py          # drive the bid modal (amount, shipping, autobid, submit)
   templates/  static/  # HTMX dashboard
 alembic/               # database migrations
-tests/                 # pytest suite (140 tests)
+tests/                 # pytest suite (155 tests)
 ```
 
 ### Database migrations
@@ -148,7 +179,7 @@ network.
 
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest            # 140 passed
+.venv/bin/python -m pytest            # 155 passed
 .venv/bin/python -m pytest -v         # verbose
 .venv/bin/python -m pytest tests/test_strategies.py   # one module
 ```
